@@ -1,0 +1,4 @@
+(library
+ (name genre)
+ (preprocess (pps ppx_deriving.show ppx_jane))
+ )

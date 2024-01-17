@@ -1,0 +1,6 @@
+(executable
+ (public_name genre)
+ (name main)
+ (libraries genre )
+ (preprocess (pps ppx_deriving.show ppx_jane))
+ )
