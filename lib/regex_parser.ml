@@ -4,12 +4,10 @@ open Parser
 
 let ( >> ) f g x = g (f x)
 
-(* Character Class parsers *)
-
-(* exception NotImplemented *)
+(* ------ Character Class parsers ------ *)
 
 let p_generic_c_class (cls : string) (typ : char_class) =
-  p_str ({|\|} ^ cls) |> p_map (fun _ -> typ)
+  p_str ("\\" ^ cls) |> p_map (fun _ -> typ)
 
 let p_c_class : char_class parser =
   p_any
@@ -20,10 +18,16 @@ let p_c_class : char_class parser =
       p_generic_c_class "D" CClassAnyDigitInv;
     ]
 
-(* TODO: parse escpaed chars such as '\.' *)
-let p_c_char : char parser = p_char |> p_filter (Char.equal ']' >> not)
+let must_escape_in_char_class = String.mem {|^-]\|}
 
-(* TODO: validate range, (i'm not sure, but i think ranges can only contain alpha-numerical chars) *)
+let p_c_char =
+  p_any
+    [
+      p_character '\\' *> p_char |> p_filter must_escape_in_char_class;
+      p_char |> p_filter (must_escape_in_char_class >> not);
+    ]
+
+(* TODO: validate range *)
 let p_c_range : char_group_itm parser =
   p_c_char <* p_character '-' <*> p_c_char
   |> p_map (fun (l, u) -> CRange (l, u))
@@ -33,7 +37,7 @@ let p_c_group_itm : char_group_itm parser =
     [
       p_c_class |> p_map (fun c_cls -> CClass c_cls);
       p_c_range;
-      p_c_char |> p_map (fun ch -> Char ch);
+      p_c_char |> p_map (fun ch -> CChar ch);
     ]
 
 let p_c_group : char_group parser =
@@ -43,7 +47,8 @@ let p_c_group : char_group parser =
   |> p_map (fun (neg_opt, grp_itm_list) ->
          (Option.is_some neg_opt, grp_itm_list))
 
-(* Quantifier parsers *)
+(* ------ Quantifier parsers ------ *)
+
 let p_q_range : quantifier parser =
   p_str "{" *> p_number
   <*> ??(p_str "," *> ??p_number)
@@ -69,7 +74,8 @@ let p_q_zro_or_one : quantifier parser = p_q_one_char '?' QZeroOrOne
 let p_quantifier : quantifier parser =
   p_any [ p_q_range; p_q_zro_or_mor; p_q_one_or_mor; p_q_zro_or_one ]
 
-(* Anchor parsers *)
+(* ------ Anchor parsers ------ *)
+
 let p_a_word_bnd : anchor parser =
   p_str {|\b|} |> p_map (fun _ -> AWordBoundary)
 
