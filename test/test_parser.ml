@@ -45,6 +45,13 @@ let%test_unit "test anchor parsing" =
   in
   ()
 
+let%test_unit "test backreference parsing" =
+  let _ =
+    [ ({|\1|}, Backreference 1); ({|\164|}, Backreference 164) ]
+    |> List.map ~f:(fun (str, res) ->
+           [%test_eq: subexpression] (parse str p_backreference) res)
+  in
+  ()
 let%test_unit "test character class parsing" =
   let _ =
     [
@@ -53,12 +60,12 @@ let%test_unit "test character class parsing" =
       ({|[^\d]|}, (true, [ CClass CClassAnyDigit ]));
       ({|[\D]|}, (false, [ CClass CClassAnyDigitInv ]));
       ({|[^\D\w]|}, (true, [ CClass CClassAnyDigitInv; CClass CClassAnyWord ]));
-      ({|[X]|}, (false, [ Char 'X' ]));
+      ({|[X]|}, (false, [ CChar 'X' ]));
       ( {|[ab\w8]|},
-        (false, [ Char 'a'; Char 'b'; CClass CClassAnyWord; Char '8' ]) );
+        (false, [ CChar 'a'; CChar 'b'; CClass CClassAnyWord; CChar '8' ]) );
       ({|[a-z]|}, (false, [ CRange ('a', 'z') ]));
       ( {|[^A-F\w ]|},
-        (true, [ CRange ('A', 'F'); CClass CClassAnyWord; Char ' ' ]) );
+        (true, [ CRange ('A', 'F'); CClass CClassAnyWord; CChar ' ' ]) );
     ]
     |> List.map ~f:(fun (str, res) ->
            [%test_eq: char_group] (parse str p_c_group) res)

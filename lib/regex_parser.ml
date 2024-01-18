@@ -89,3 +89,9 @@ let p_a_end_of_str : anchor parser = p_str "$" |> p_map (fun _ -> AEndOfString)
 
 let p_anchor : anchor parser =
   p_any [ p_a_word_bnd; p_a_non_word_bnd; p_a_start_of_str; p_a_end_of_str ]
+
+(* ------ Backreference parser ------ *)
+
+let p_backreference : subexpression parser =
+  p_str {|\|} *> p_number |> p_map (fun i -> Backreference i)
+

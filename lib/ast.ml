@@ -18,7 +18,6 @@ type quantifier_typ =
 type quantifier = quantifier_typ * bool [@@deriving sexp]
 
 (* Character Classes *)
-
 type char_class =
   | CClassAnyWord
   | CClassAnyWordInv
@@ -29,7 +28,7 @@ type char_class =
 type char_group_itm =
   | CClass of char_class
   | CRange of char * char
-  | Char of char
+  | CChar of char
 [@@deriving sexp]
 
 type char_group = bool * char_group_itm list [@@deriving sexp]

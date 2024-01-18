@@ -18,3 +18,7 @@ val p_a_non_word_bnd : anchor parser
 val p_a_start_of_str : anchor parser
 val p_a_end_of_str : anchor parser
 val p_anchor : anchor parser
+
+(* Backreference parser *)
+val p_backreference : subexpression parser
+
