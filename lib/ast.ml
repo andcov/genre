@@ -23,6 +23,8 @@ type char_class =
   | CClassAnyWordInv
   | CClassAnyDigit
   | CClassAnyDigitInv
+  | CClassWhitespace
+  | CClassWhitespaceInv
 [@@deriving sexp]
 
 type char_group_itm =

@@ -16,6 +16,8 @@ let p_c_class : char_class parser =
       p_generic_c_class "W" CClassAnyWordInv;
       p_generic_c_class "d" CClassAnyDigit;
       p_generic_c_class "D" CClassAnyDigitInv;
+      p_generic_c_class "s" CClassWhitespace;
+      p_generic_c_class "S" CClassWhitespaceInv;
     ]
 
 let must_escape_in_char_class = String.mem {|^-]\|}
