@@ -12,7 +12,8 @@ exception NotEnoughMatchesError
 exception LengthError
 exception NoMatch
 
-let parse str p = fst @@ p @@ str_to_ch_list str
+let parse str p =
+  match p @@ str_to_ch_list str with v, [] -> v | _, _ -> raise NoMatch
 
 let p_str to_match chs =
   let rec matching prefs chs =
