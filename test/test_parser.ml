@@ -12,6 +12,13 @@ let compare_anchor a1 a2 =
 let compare_char_group c1 c2 =
   if Sexp.equal (sexp_of_char_group c1) (sexp_of_char_group c2) then 0 else 1
 
+let compare_subexpression s1 s2 =
+  if Sexp.equal (sexp_of_subexpression s1) (sexp_of_subexpression s2) then 0
+  else 1
+
+let compare_match_typ m1 m2 =
+  if Sexp.equal (sexp_of_match_typ m1) (sexp_of_match_typ m2) then 0 else 1
+
 let%test_unit "test quantifier parsing" =
   let _ =
     [
@@ -52,6 +59,7 @@ let%test_unit "test backreference parsing" =
            [%test_eq: subexpression] (parse str p_backreference) res)
   in
   ()
+
 let%test_unit "test character class parsing" =
   let _ =
     [
@@ -69,5 +77,24 @@ let%test_unit "test character class parsing" =
     ]
     |> List.map ~f:(fun (str, res) ->
            [%test_eq: char_group] (parse str p_c_group) res)
+  in
+  ()
+
+let%test_unit "test match parsing" =
+  let _ =
+    [
+      (".", (MAnyChar, None));
+      (".+", (MAnyChar, Some (QOneOrMore, false)));
+      (".+?", (MAnyChar, Some (QOneOrMore, true)));
+      ({|\w|}, (MCharClass CClassAnyWord, None));
+      ( {|\D{24}|},
+        (MCharClass CClassAnyDigitInv, Some (QRange (Exactly 24), false)) );
+      ( "[a-z]?",
+        (MCharGroup (false, [ CRange ('a', 'z') ]), Some (QZeroOrOne, false)) );
+      ("9", (MChar '9', None));
+      ("Z*", (MChar 'Z', Some (QZeroOrMore, false)));
+    ]
+    |> List.map ~f:(fun (str, res) ->
+           [%test_eq: match_typ] (parse str p_match) res)
   in
   ()

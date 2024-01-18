@@ -95,3 +95,29 @@ let p_anchor : anchor parser =
 let p_backreference : subexpression parser =
   p_str {|\|} *> p_number |> p_map (fun i -> Backreference i)
 
+(* ------ Match parsers ------ *)
+
+let p_m_any_char : match_itm parser =
+  p_character '.' |> p_map (fun _ -> MAnyChar)
+
+let must_escape = String.mem {|.^$*+?()[{\||}
+
+let p_m_char : match_itm parser =
+  p_any
+    [
+      p_character '\\' *> p_char |> p_filter must_escape;
+      p_char |> p_filter (must_escape >> not);
+    ]
+  |> p_map (fun ch -> MChar ch)
+
+let p_m_char_class : match_itm parser =
+  p_c_class |> p_map (fun cls -> MCharClass cls)
+
+let p_m_char_group : match_itm parser =
+  p_c_group |> p_map (fun gr -> MCharGroup gr)
+
+let p_m_item : match_itm parser =
+  p_any [ p_m_any_char; p_m_char_class; p_m_char_group; p_m_char ]
+
+let p_match : match_typ parser = p_m_item <*> ??p_quantifier
+

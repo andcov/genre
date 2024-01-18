@@ -34,13 +34,11 @@ type char_group_itm =
 type char_group = bool * char_group_itm list [@@deriving sexp]
 
 (* Match Types *)
-type match_char_class = CharGroup | CharClass | CharClassFromUnicodeCategory
-[@@deriving sexp]
-
 type match_itm =
-  | MatchAnyChar
-  | MatchCharClass of match_char_class
-  | MatchChar of char
+  | MAnyChar
+  | MCharClass of char_class
+  | MCharGroup of char_group (* | MCharClassFromUnicodeCategory *)
+  | MChar of char
 [@@deriving sexp]
 
 type match_typ = match_itm * quantifier option [@@deriving sexp]

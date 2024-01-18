@@ -22,3 +22,10 @@ val p_anchor : anchor parser
 (* Backreference parser *)
 val p_backreference : subexpression parser
 
+(* Match parsers *)
+val p_m_any_char : match_itm parser
+val p_m_char : match_itm parser
+val p_m_char_class : match_itm parser
+val p_m_item : match_itm parser
+val p_match : match_typ parser
+
