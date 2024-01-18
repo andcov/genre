@@ -44,11 +44,18 @@ type match_itm =
 type match_typ = match_itm * quantifier option [@@deriving sexp]
 
 (* Expression & Group Types *)
-type expression = subexpression list [@@deriving sexp]
-
-and subexpression = Match | Group of group_typ | Anchor | Backreference
+type expression =
+  | Node of subexpression list * expression
+  | Leaf of subexpression list
 [@@deriving sexp]
 
-and group_typ = bool * expression * quantifier option [@@deriving sexp]
+and subexpression =
+  | Group of group
+  | Anchor of anchor
+  | Backreference of int
+  | Match of match_typ (* | Subexpression of subexpression *)
+[@@deriving sexp]
 
-type regex_typ = bool * expression [@@deriving sexp]
+and group = bool * expression * quantifier option [@@deriving sexp]
+
+type regex = bool * expression [@@deriving sexp]

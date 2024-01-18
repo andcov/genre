@@ -29,3 +29,8 @@ val p_m_char_class : match_itm parser
 val p_m_item : match_itm parser
 val p_match : match_typ parser
 
+(* Expression parsers *)
+val p_group : unit -> group parser
+val p_subexpressions : unit -> subexpression list parser
+val p_expression : unit -> expression parser
+val p_regex : regex parser

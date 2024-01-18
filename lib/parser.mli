@@ -8,6 +8,8 @@ val p_map : ('a -> 'b) -> 'a parser -> 'b parser
 val ( <*> ) : 'a parser -> 'b parser -> ('a * 'b) parser
 val ( *> ) : 'a parser -> 'b parser -> 'b parser
 val ( <* ) : 'a parser -> 'b parser -> 'a parser
+val ( <**> ) : 'a parser -> 'b parser Lazy.t -> ('a * 'b) parser
+val ( **> ) : 'a parser -> 'b parser Lazy.t -> 'b parser
 val p_zero_or_more : 'a parser -> 'a list parser
 val p_one_or_more : 'a parser -> 'a list parser
 val ( ?? ) : 'a parser -> 'a option parser

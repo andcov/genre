@@ -38,17 +38,27 @@ let p_map f p chs =
   (f v, r)
 
 let ( <*> ) p1 p2 chs =
-  let a, chs = p1 chs in
-  let b, rst = p2 chs in
-  ((a, b), rst)
+  let l, chs = p1 chs in
+  let r, rst = p2 chs in
+  ((l, r), rst)
 
 let ( *> ) p1 p2 chs =
-  let (_, v), rst = (p1 <*> p2) chs in
-  (v, rst)
+  let (_, r), rst = (p1 <*> p2) chs in
+  (r, rst)
 
 let ( <* ) p1 p2 chs =
-  let (v, _), rst = (p1 <*> p2) chs in
-  (v, rst)
+  let (l, _), rst = (p1 <*> p2) chs in
+  (l, rst)
+
+let ( <**> ) p1 p2 chs =
+  let l, chs = p1 chs in
+  let r, rst = (Lazy.force p2) chs in
+  ((l, r), rst)
+
+let ( **> ) p1 p2 chs =
+  let _, chs = p1 chs in
+  let r, rst = (Lazy.force p2) chs in
+  (r, rst)
 
 let rec p_any parsers chs =
   match parsers with

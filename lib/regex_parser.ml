@@ -121,3 +121,31 @@ let p_m_item : match_itm parser =
 
 let p_match : match_typ parser = p_m_item <*> ??p_quantifier
 
+(* ------ Group parsers ------ *)
+
+let rec p_expression () : expression parser =
+  p_subexpressions ()
+  <*> ??(p_character '|' **> lazy (p_expression ()))
+  |> p_map (fun (sub_e, rst) ->
+         match rst with None -> Leaf sub_e | Some e -> Node (sub_e, e))
+
+and p_group () : group parser =
+  p_character '(' *> ??(p_str "?:")
+  <**> lazy (p_expression ())
+  <* p_character ')' <*> ??p_quantifier
+  |> p_map (fun ((non_capt, exp), quant) ->
+         (Option.is_some non_capt, exp, quant))
+
+and p_subexpressions () : subexpression list parser =
+  p_any
+    [
+      p_group () |> p_map (fun g -> Group g);
+      p_anchor |> p_map (fun a -> Anchor a);
+      p_backreference;
+      p_match |> p_map (fun m -> Match m);
+    ]
+  |> p_one_or_more
+
+let p_regex : regex parser =
+  ??(p_anchor |> p_filter (phys_equal AStartOfString))
+  |> p_map Option.is_some <*> p_expression ()
