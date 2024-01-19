@@ -93,8 +93,8 @@ let p_anchor : anchor parser =
 
 (* ------ Backreference parser ------ *)
 
-let p_backreference : subexpression parser =
-  p_str {|\|} *> p_number |> p_map (fun i -> Backreference i)
+let p_backreference : backreference parser =
+  p_str {|\|} *> p_number <*> ??p_quantifier |> p_map (fun (id, q) -> { q; id })
 
 (* ------ Match parsers ------ *)
 
@@ -145,7 +145,7 @@ and p_expression () : expression parser =
     [
       p_group () |> p_map (fun g -> Group g);
       p_anchor |> p_map (fun a -> Anchor a);
-      p_backreference;
+      p_backreference |> p_map (fun b -> Backreference b);
       p_match |> p_map (fun m -> Match m);
     ]
   |> p_zero_or_more

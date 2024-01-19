@@ -46,6 +46,9 @@ type match_itm =
 
 type match_typ = { q : quantifier option; itm : match_itm } [@@deriving sexp]
 
+(* Backreference Types *)
+type backreference = { q : quantifier option; id : int } [@@deriving sexp]
+
 (* Expression & Group Types *)
 type group_typ = Capturing of int | Noncapturing [@@deriving sexp]
 
@@ -55,7 +58,7 @@ and expression = subexpression list [@@deriving sexp]
 and subexpression =
   | Group of group
   | Anchor of anchor
-  | Backreference of int
+  | Backreference of backreference
   | Match of match_typ
 [@@deriving sexp]
 

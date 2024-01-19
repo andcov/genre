@@ -20,7 +20,7 @@ val p_a_end_of_str : anchor parser
 val p_anchor : anchor parser
 
 (* Backreference parser *)
-val p_backreference : subexpression parser
+val p_backreference : backreference parser
 
 (* Match parsers *)
 val p_m_any_char : match_itm parser

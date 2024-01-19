@@ -12,6 +12,10 @@ let compare_anchor a1 a2 =
 let compare_char_group c1 c2 =
   if Sexp.equal (sexp_of_char_group c1) (sexp_of_char_group c2) then 0 else 1
 
+let compare_backreference b1 b2 =
+  if Sexp.equal (sexp_of_backreference b1) (sexp_of_backreference b2) then 0
+  else 1
+
 let compare_subexpression s1 s2 =
   if Sexp.equal (sexp_of_subexpression s1) (sexp_of_subexpression s2) then 0
   else 1
@@ -54,9 +58,14 @@ let%test_unit "test anchor parsing" =
 
 let%test_unit "test backreference parsing" =
   let _ =
-    [ ({|\1|}, Backreference 1); ({|\164|}, Backreference 164) ]
+    [
+      ({|\1|}, { id = 1; q = None });
+      ({|\16*?|}, { id = 16; q = Some { typ = QZeroOrMore; greedy = false } });
+      ( {|\3{2,}|},
+        { id = 3; q = Some { typ = QRange (Least 2); greedy = true } } );
+    ]
     |> List.map ~f:(fun (str, res) ->
-           [%test_eq: subexpression] (parse str p_backreference) res)
+           [%test_eq: backreference] (parse str p_backreference) res)
   in
   ()
 
