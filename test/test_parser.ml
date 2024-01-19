@@ -22,17 +22,17 @@ let compare_match_typ m1 m2 =
 let%test_unit "test quantifier parsing" =
   let _ =
     [
-      ("{34}", (QRange (Exactly 34), false));
-      ("{1234,}", (QRange (Least 1234), false));
-      ("{0,10}", (QRange (Range (0, 10)), false));
-      ("{12}?", (QRange (Exactly 12), true));
-      ("{93678,}?", (QRange (Least 93678), true));
-      ("*", (QZeroOrMore, false));
-      ("*?", (QZeroOrMore, true));
-      ("+", (QOneOrMore, false));
-      ("+?", (QOneOrMore, true));
-      ("?", (QZeroOrOne, false));
-      ("??", (QZeroOrOne, true));
+      ("{34}", { typ = QRange (Exactly 34); greedy = true });
+      ("{12}?", { typ = QRange (Exactly 12); greedy = false });
+      ("{1234,}", { typ = QRange (Least 1234); greedy = true });
+      ("{0,10}", { typ = QRange (Range (0, 10)); greedy = true });
+      ("{93678,}?", { typ = QRange (Least 93678); greedy = false });
+      ("*", { typ = QZeroOrMore; greedy = true });
+      ("*?", { typ = QZeroOrMore; greedy = false });
+      ("+", { typ = QOneOrMore; greedy = true });
+      ("+?", { typ = QOneOrMore; greedy = false });
+      ("?", { typ = QZeroOrOne; greedy = true });
+      ("??", { typ = QZeroOrOne; greedy = false });
     ]
     |> List.map ~f:(fun (str, res) ->
            [%test_eq: quantifier] (parse str p_quantifier) res)
@@ -63,17 +63,27 @@ let%test_unit "test backreference parsing" =
 let%test_unit "test character class parsing" =
   let _ =
     [
-      ({|[\w]|}, (false, [ CClass CClassAnyWord ]));
-      ({|[^\W]|}, (true, [ CClass CClassAnyWordInv ]));
-      ({|[^\d]|}, (true, [ CClass CClassAnyDigit ]));
-      ({|[\D]|}, (false, [ CClass CClassAnyDigitInv ]));
-      ({|[^\D\w]|}, (true, [ CClass CClassAnyDigitInv; CClass CClassAnyWord ]));
-      ({|[X]|}, (false, [ CChar 'X' ]));
+      ({|[\w]|}, { neg = false; inner = [ CClass CClassAnyWord ] });
+      ({|[^\W]|}, { neg = true; inner = [ CClass CClassAnyWordInv ] });
+      ({|[^\d]|}, { neg = true; inner = [ CClass CClassAnyDigit ] });
+      ({|[\D]|}, { neg = false; inner = [ CClass CClassAnyDigitInv ] });
+      ( {|[^\D\w]|},
+        {
+          neg = true;
+          inner = [ CClass CClassAnyDigitInv; CClass CClassAnyWord ];
+        } );
+      ({|[X]|}, { neg = false; inner = [ CChar 'X' ] });
       ( {|[ab\w8]|},
-        (false, [ CChar 'a'; CChar 'b'; CClass CClassAnyWord; CChar '8' ]) );
-      ({|[a-z]|}, (false, [ CRange ('a', 'z') ]));
+        {
+          neg = false;
+          inner = [ CChar 'a'; CChar 'b'; CClass CClassAnyWord; CChar '8' ];
+        } );
+      ({|[a-z]|}, { neg = false; inner = [ CRange ('a', 'z') ] });
       ( {|[^A-F\w ]|},
-        (true, [ CRange ('A', 'F'); CClass CClassAnyWord; CChar ' ' ]) );
+        {
+          neg = true;
+          inner = [ CRange ('A', 'F'); CClass CClassAnyWord; CChar ' ' ];
+        } );
     ]
     |> List.map ~f:(fun (str, res) ->
            [%test_eq: char_group] (parse str p_c_group) res)
@@ -83,16 +93,22 @@ let%test_unit "test character class parsing" =
 let%test_unit "test match parsing" =
   let _ =
     [
-      (".", (MAnyChar, None));
-      (".+", (MAnyChar, Some (QOneOrMore, false)));
-      (".+?", (MAnyChar, Some (QOneOrMore, true)));
-      ({|\w|}, (MCharClass CClassAnyWord, None));
+      (".", { itm = MAnyChar; q = None });
+      (".+", { itm = MAnyChar; q = Some { typ = QOneOrMore; greedy = true } });
+      (".+?", { itm = MAnyChar; q = Some { typ = QOneOrMore; greedy = false } });
+      ({|\w|}, { itm = MCharClass CClassAnyWord; q = None });
       ( {|\D{24}|},
-        (MCharClass CClassAnyDigitInv, Some (QRange (Exactly 24), false)) );
+        {
+          itm = MCharClass CClassAnyDigitInv;
+          q = Some { typ = QRange (Exactly 24); greedy = true };
+        } );
       ( "[a-z]?",
-        (MCharGroup (false, [ CRange ('a', 'z') ]), Some (QZeroOrOne, false)) );
-      ("9", (MChar '9', None));
-      ("Z*", (MChar 'Z', Some (QZeroOrMore, false)));
+        {
+          itm = MCharGroup { neg = false; inner = [ CRange ('a', 'z') ] };
+          q = Some { typ = QZeroOrOne; greedy = true };
+        } );
+      ("9", { itm = MChar '9'; q = None });
+      ("Z*", { itm = MChar 'Z'; q = Some { typ = QZeroOrMore; greedy = true } });
     ]
     |> List.map ~f:(fun (str, res) ->
            [%test_eq: match_typ] (parse str p_match) res)

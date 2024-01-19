@@ -46,8 +46,7 @@ let p_c_group : char_group parser =
   p_str "[" *> ??(p_str "^")
   <*> p_one_or_more p_c_group_itm
   <* p_str "]"
-  |> p_map (fun (neg_opt, grp_itm_list) ->
-         (Option.is_some neg_opt, grp_itm_list))
+  |> p_map (fun (neg_opt, inner) -> { neg = Option.is_some neg_opt; inner })
 
 (* ------ Quantifier parsers ------ *)
 
@@ -63,11 +62,11 @@ let p_q_range : quantifier parser =
            | Some None -> Least l
            | Some (Some u) -> Range (l, u)
          in
-         (QRange q, Option.is_some lzy))
+         { greedy = Option.is_none lzy; typ = QRange q })
 
 let p_q_one_char (ch : char) (typ : quantifier_typ) =
   p_character ch *> ??(p_character '?')
-  |> p_map (fun lzy -> (typ, Option.is_some lzy))
+  |> p_map (fun lzy -> { greedy = Option.is_none lzy; typ })
 
 let p_q_zro_or_mor : quantifier parser = p_q_one_char '*' QZeroOrMore
 let p_q_one_or_mor : quantifier parser = p_q_one_char '+' QOneOrMore
@@ -121,24 +120,27 @@ let p_m_char_group : match_itm parser =
 let p_m_item : match_itm parser =
   p_any [ p_m_any_char; p_m_char_class; p_m_char_group; p_m_char ]
 
-let p_match : match_typ parser = p_m_item <*> ??p_quantifier
+let p_match : match_typ parser =
+  p_m_item <*> ??p_quantifier |> p_map (fun (itm, q) -> { itm; q })
 
-(* ------ Group parsers ------ *)
+(* ------ Expression parsers ------ *)
 
-let rec p_expression () : expression parser =
-  p_subexpressions ()
-  <*> ??(p_character '|' **> lazy (p_expression ()))
-  |> p_map (fun (sub_e, rst) ->
-         match rst with None -> Leaf sub_e | Some e -> Node (sub_e, e))
+let rec p_regex () : regex parser =
+  p_expression ()
+  <*> p_zero_or_more (p_character '|' **> lazy (p_expression ()))
+  |> p_map (fun (s, rst) -> s :: rst)
 
 and p_group () : group parser =
   p_character '(' *> ??(p_str "?:")
-  <**> lazy (p_expression ())
+  <**> lazy (p_regex ())
   <* p_character ')' <*> ??p_quantifier
-  |> p_map (fun ((non_capt, exp), quant) ->
-         (Option.is_some non_capt, exp, quant))
+  |> p_map (fun ((non_capt, inner), q) ->
+         let cap =
+           match non_capt with Some _ -> Noncapturing | None -> Capturing 0
+         in
+         { cap; inner; q })
 
-and p_subexpressions () : subexpression list parser =
+and p_expression () : expression parser =
   p_any
     [
       p_group () |> p_map (fun g -> Group g);
@@ -146,8 +148,4 @@ and p_subexpressions () : subexpression list parser =
       p_backreference;
       p_match |> p_map (fun m -> Match m);
     ]
-  |> p_one_or_more
-
-let p_regex : regex parser =
-  ??(p_anchor |> p_filter (phys_equal AStartOfString))
-  |> p_map Option.is_some <*> p_expression ()
+  |> p_zero_or_more
