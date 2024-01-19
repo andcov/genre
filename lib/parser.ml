@@ -2,18 +2,21 @@ type 'a parser = char list -> 'a * char list
 
 let ( >> ) f g x = g (f x)
 let str_to_ch_list = String.to_seq >> List.of_seq
+let str_of_ch_list = List.to_seq >> String.of_seq
 let c_is_digit = function '0' .. '9' -> true | _ -> false
 let c_to_int ch = Char.(code ch - code '0')
 
 exception StrError of string
 exception CharError of char
+exception RemainingChars of string
 exception FilterError
-exception NotEnoughMatchesError
+exception NotEnoughMatches of string
 exception LengthError
-exception NoMatch
 
 let parse str p =
-  match p @@ str_to_ch_list str with v, [] -> v | _, _ -> raise NoMatch
+  match p @@ str_to_ch_list str with
+  | v, [] -> v
+  | _, r -> raise (RemainingChars (str_of_ch_list r))
 
 let p_str to_match chs =
   let rec matching prefs chs =
@@ -64,7 +67,7 @@ let ( **> ) p1 p2 chs =
 let rec p_any parsers chs =
   match parsers with
   | p :: rst -> ( try p chs with _ -> p_any rst chs)
-  | [] -> raise NoMatch
+  | [] -> raise (NotEnoughMatches (str_of_ch_list chs))
 
 let p_zero_or_more p chs =
   let rec matching chs acc =
@@ -79,7 +82,7 @@ let p_zero_or_more p chs =
 
 let p_one_or_more p chs =
   match p_zero_or_more p chs with
-  | [], _ -> raise NotEnoughMatchesError
+  | [], r -> raise (NotEnoughMatches (str_of_ch_list r))
   | vals, chars -> (vals, chars)
 
 let ( ?? ) p chs =
