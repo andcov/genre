@@ -132,7 +132,7 @@ let%test_unit "test regex parsing" =
             Match { itm = MStr "col"; q = None };
             Group
               {
-                cap = Capturing 0;
+                cap = Capturing 1;
                 q = None;
                 inner =
                   [
@@ -155,7 +155,7 @@ let%test_unit "test regex parsing" =
             Match { itm = MChar '<'; q = None };
             Group
               {
-                cap = Capturing 0;
+                cap = Capturing 1;
                 q = None;
                 inner =
                   [
@@ -179,8 +179,72 @@ let%test_unit "test regex parsing" =
             Match { itm = MChar '>'; q = None };
           ];
         ] );
+      ( "(h(e(l)(l)))|(?:o(w))",
+        [
+          [
+            Group
+              {
+                cap = Capturing 1;
+                q = None;
+                inner =
+                  [
+                    [
+                      Match { itm = MChar 'h'; q = None };
+                      Group
+                        {
+                          cap = Capturing 2;
+                          q = None;
+                          inner =
+                            [
+                              [
+                                Match { itm = MChar 'e'; q = None };
+                                Group
+                                  {
+                                    cap = Capturing 3;
+                                    q = None;
+                                    inner =
+                                      [
+                                        [ Match { itm = MChar 'l'; q = None } ];
+                                      ];
+                                  };
+                                Group
+                                  {
+                                    cap = Capturing 4;
+                                    q = None;
+                                    inner =
+                                      [
+                                        [ Match { itm = MChar 'l'; q = None } ];
+                                      ];
+                                  };
+                              ];
+                            ];
+                        };
+                    ];
+                  ];
+              };
+          ];
+          [
+            Group
+              {
+                cap = Noncapturing;
+                q = None;
+                inner =
+                  [
+                    [
+                      Match { itm = MChar 'o'; q = None };
+                      Group
+                        {
+                          cap = Capturing 5;
+                          q = None;
+                          inner = [ [ Match { itm = MChar 'w'; q = None } ] ];
+                        };
+                    ];
+                  ];
+              };
+          ];
+        ] );
     ]
     |> List.map ~f:(fun (str, res) ->
-           [%test_eq: regex] (parse str (p_regex ()) |> optimize_chars) res)
+           [%test_eq: regex] (parse str (p_regex ()) |> optimize) res)
   in
   ()
