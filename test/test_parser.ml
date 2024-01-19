@@ -16,12 +16,11 @@ let compare_backreference b1 b2 =
   if Sexp.equal (sexp_of_backreference b1) (sexp_of_backreference b2) then 0
   else 1
 
-let compare_subexpression s1 s2 =
-  if Sexp.equal (sexp_of_subexpression s1) (sexp_of_subexpression s2) then 0
-  else 1
-
 let compare_match_typ m1 m2 =
   if Sexp.equal (sexp_of_match_typ m1) (sexp_of_match_typ m2) then 0 else 1
+
+let compare_regex r1 r2 =
+  if Sexp.equal (sexp_of_regex r1) (sexp_of_regex r2) then 0 else 1
 
 let%test_unit "test quantifier parsing" =
   let _ =
@@ -121,5 +120,67 @@ let%test_unit "test match parsing" =
     ]
     |> List.map ~f:(fun (str, res) ->
            [%test_eq: match_typ] (parse str p_match) res)
+  in
+  ()
+
+let%test_unit "test regex parsing" =
+  let _ =
+    [
+      ( "col(o|ou)r|co+?l",
+        [
+          [
+            Match { itm = MStr "col"; q = None };
+            Group
+              {
+                cap = Capturing 0;
+                q = None;
+                inner =
+                  [
+                    [ Match { itm = MChar 'o'; q = None } ];
+                    [ Match { itm = MStr "ou"; q = None } ];
+                  ];
+              };
+            Match { itm = MChar 'r'; q = None };
+          ];
+          [
+            Match { itm = MChar 'c'; q = None };
+            Match
+              { itm = MChar 'o'; q = Some { greedy = false; typ = QOneOrMore } };
+            Match { itm = MChar 'l'; q = None };
+          ];
+        ] );
+      ( "<([^>]+)>[^<]*</\\1>",
+        [
+          [
+            Match { itm = MChar '<'; q = None };
+            Group
+              {
+                cap = Capturing 0;
+                q = None;
+                inner =
+                  [
+                    [
+                      Match
+                        {
+                          itm = MCharGroup { neg = true; inner = [ CChar '>' ] };
+                          q = Some { greedy = true; typ = QOneOrMore };
+                        };
+                    ];
+                  ];
+              };
+            Match { itm = MChar '>'; q = None };
+            Match
+              {
+                itm = MCharGroup { neg = true; inner = [ CChar '<' ] };
+                q = Some { greedy = true; typ = QZeroOrMore };
+              };
+            Match { itm = MStr "</"; q = None };
+            Backreference { id = 1; q = None };
+            Match { itm = MChar '>'; q = None };
+          ];
+        ] );
+    ]
+    |> List.map ~f:(fun (str, res) ->
+           [%test_eq: regex] (parse str (p_regex ()) |> optimize_chars) res)
   in
   ()
