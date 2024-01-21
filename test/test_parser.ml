@@ -38,7 +38,7 @@ let%test_unit "test quantifier parsing" =
       ("??", { typ = QZeroOrOne; greedy = false });
     ]
     |> List.map ~f:(fun (str, res) ->
-           [%test_eq: quantifier] (parse str p_quantifier) res)
+           [%test_eq: quantifier] (parse p_quantifier str) res)
   in
   ()
 
@@ -51,7 +51,7 @@ let%test_unit "test anchor parsing" =
       ("$", AEndOfString);
     ]
     |> List.map ~f:(fun (str, res) ->
-           [%test_eq: anchor] (parse str p_anchor) res)
+           [%test_eq: anchor] (parse p_anchor str) res)
   in
   ()
 
@@ -64,7 +64,7 @@ let%test_unit "test backreference parsing" =
         { id = 3; q = Some { typ = QRange (Least 2); greedy = true } } );
     ]
     |> List.map ~f:(fun (str, res) ->
-           [%test_eq: backreference] (parse str p_backreference) res)
+           [%test_eq: backreference] (parse p_backreference str) res)
   in
   ()
 
@@ -94,7 +94,7 @@ let%test_unit "test character class parsing" =
         } );
     ]
     |> List.map ~f:(fun (str, res) ->
-           [%test_eq: char_group] (parse str p_c_group) res)
+           [%test_eq: char_group] (parse p_c_group str) res)
   in
   ()
 
@@ -119,7 +119,7 @@ let%test_unit "test match parsing" =
       ("Z*", { itm = MChar 'Z'; q = Some { typ = QZeroOrMore; greedy = true } });
     ]
     |> List.map ~f:(fun (str, res) ->
-           [%test_eq: match_typ] (parse str p_match) res)
+           [%test_eq: match_typ] (parse p_match str) res)
   in
   ()
 
@@ -244,7 +244,6 @@ let%test_unit "test regex parsing" =
           ];
         ] );
     ]
-    |> List.map ~f:(fun (str, res) ->
-           [%test_eq: regex] (parse str (p_regex ()) |> optimize) res)
+    |> List.map ~f:(fun (str, res) -> [%test_eq: regex] (parse_regex str) res)
   in
   ()

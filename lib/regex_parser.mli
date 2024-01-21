@@ -33,3 +33,4 @@ val p_match : match_typ parser
 val p_group : unit -> group parser
 val p_expression : unit -> expression parser
 val p_regex : unit -> regex parser
+val parse_regex : string -> regex

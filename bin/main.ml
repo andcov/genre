@@ -1,9 +1,6 @@
 let () =
   let r =
-    Genre.Parser.parse {|(foo (nar) (bix)) (bax)|(bux) (nax (iop))|}
-      (Genre.Regex_parser.p_regex ())
-    |> Genre.Ast.optimize
+    Genre.Regex_parser.parse_regex {|(foo (nar) (bix)) (bax)|(bux) (nax (iop))|}
   in
-  (* Genre.Ast.print_regex r; *)
   Stdio.print_s (Genre.Ast.sexp_of_regex r);
   ()

@@ -1,6 +1,6 @@
 type 'a parser
 
-val parse : string -> 'a parser -> 'a
+val parse : 'a parser -> string -> 'a
 val p_str : string -> unit parser
 val p_character : char -> unit parser
 val p_filter : ('a -> bool) -> 'a parser -> 'a parser

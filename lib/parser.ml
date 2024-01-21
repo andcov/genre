@@ -13,7 +13,7 @@ exception FilterError
 exception NotEnoughMatches of string
 exception LengthError
 
-let parse str p =
+let parse p str =
   match p @@ str_to_ch_list str with
   | v, [] -> v
   | _, r -> raise (RemainingChars (str_of_ch_list r))
