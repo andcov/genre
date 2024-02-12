@@ -7,9 +7,21 @@ let next i =
   i := !i + 1;
   !i - 1
 
+let next_two i =
+  let a, b = (next i, next i) in
+  (b, a)
+
+let char_is_in_range ch l r =
+  let ch, l, r = Char.(to_int ch, to_int l, to_int r) in
+  l <= ch && ch <= r
+
 module Transition = struct
   module T = struct
-    type t = { dest : int; trans_fn : char list -> bool; trans_desc : string }
+    type t = {
+      dest : int;
+      trans_fn : string -> int -> (int, string) Result.t;
+      trans_desc : string;
+    }
     [@@deriving sexp]
 
     let compare t1 t2 = Int.compare t1.dest t2.dest
@@ -21,29 +33,29 @@ end
 
 include Transition
 
-type transition_set = Set.M(Transition).t [@@deriving sexp]
-type int_to_transitions_map = transition_set Map.M(Int).t [@@deriving sexp]
-
-let empty_set : transition_set = Set.empty (module Transition)
+type int_to_transitions_map = Transition.t list Map.M(Int).t [@@deriving sexp]
 
 let epsilon_trans dest_node =
-  { dest = dest_node; trans_fn = (fun _ -> true); trans_desc = {|ε|} }
+  { dest = dest_node; trans_fn = (fun _ i -> Ok i); trans_desc = {|ε|} }
 
 type t = { start_state : int; end_state : int; adj : int_to_transitions_map }
 [@@deriving sexp]
 
-let create start_state end_state =
+let create_nfa ?edge start_state end_state =
   let adj =
     Map.of_alist_exn
       (module Int)
-      [ (start_state, empty_set); (end_state, empty_set) ]
+      [
+        (start_state, match edge with Some t -> [ t ] | None -> []);
+        (end_state, []);
+      ]
   in
   { start_state; end_state; adj }
 
-let add_edge node trans adj =
+let add_edge node (trans : Transition.t) adj =
   Map.update adj node ~f:(fun s ->
-      let s = Option.value ~default:empty_set s in
-      Set.add s trans)
+      let s = Option.value ~default:[] s in
+      trans :: s)
 
 let subexpression_to_nfa (i : int ref) (_ : subexpression) : t =
   let start_state = next i in
@@ -75,6 +87,8 @@ let expression_to_nfa (i : int ref) (exp : expression) : t =
   in
   let adj' = add_edge prev_end_state (epsilon_trans end_state) nfa.adj in
   { nfa with adj = adj' }
+let add_edge_nfa node (trans : Transition.t) nfa =
+  { nfa with adj = add_edge node trans nfa.adj }
 
 let regex_to_nfa (i : int ref) (rg : regex) : t =
   let start_state = next i in
