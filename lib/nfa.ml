@@ -255,17 +255,38 @@ let of_regex = regex_to_nfa (ref 0)
 
 let to_dot nfa =
   let s =
-    {|digraph finite_state_machine {
+    Printf.sprintf
+      {|digraph finite_state_machine {
     fontname="Helvetica,Arial,sans-serif"
     node [fontname="Helvetica,Arial,sans-serif"]
     edge [fontname="Helvetica,Arial,sans-serif"]
     rankdir=LR;
+    node [shape = doublecircle]; %d %d;
     node [shape = circle];|}
+      nfa.start_state nfa.end_state
   in
+
   let dot =
-    Map.fold nfa.adj ~init:s ~f:(fun ~key:node ~data:set s ->
-        Set.fold set ~init:s ~f:(fun s dest ->
+    Map.fold nfa.adj ~init:s ~f:(fun ~key:node ~data:trans s ->
+        List.fold trans ~init:s ~f:(fun s dest ->
             Printf.sprintf "%s\n\t%d -> %d [label = \"%s\"];" s node dest.dest
               dest.trans_desc))
   in
   dot ^ "\n}"
+
+let match_string nfa str =
+  let rec find_res l ~f =
+    match l with
+    | [] -> Error "No match"
+    | [ x ] -> ( match f x with Error e -> Error e | ok -> ok)
+    | h :: t -> ( match f h with Error _ -> find_res t ~f | ok -> ok)
+  in
+
+  let rec match' node i =
+    if node = nfa.end_state then Ok i
+    else
+      Map.find_exn nfa.adj node
+      |> find_res ~f:(fun { dest; trans_fn; _ } ->
+             match trans_fn str i with Ok i' -> match' dest i' | err -> err)
+  in
+  match' nfa.start_state 0
